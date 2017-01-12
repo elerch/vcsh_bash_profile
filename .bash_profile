@@ -6,8 +6,13 @@ for file in ~/.{extra,bash_prompt,exports,aliases,functions}; do
 done
 unset file
 
-# Add path to homebrew bin.
-PATH=/usr/local/sbin:/usr/local/bin:$PATH
+# Add ~/bin:/usr/local/sbin:/usr/local/bin to path if they're not there
+! echo $PATH |fgrep /usr/local/bin >/dev/null && \
+  PATH=/usr/local/bin:$PATH
+! echo $PATH |fgrep /usr/local/sbin >/dev/null && \
+  PATH=/usr/local/sbin:$PATH
+! echo $PATH |fgrep $HOME/bin >/dev/null && \
+  PATH=$HOME/bin:$PATH
 
 if hash brew 2>/dev/null; then
   PATH=$(brew --prefix coreutils)/libexec/gnubin:$PATH
@@ -65,8 +70,8 @@ else
       $(lsof -U -a -p $SSH_AGENT_PID -F n | grep '^n/' | cut -c2-)
     echo "$SSH_AUTH_SOCK" > ${HOME}/.ssh-auth-sock
     echo "$SSH_AGENT_PID" > ${HOME}/.ssh-agent-pid
-  else
-    echo "No running ssh-agent found.  Check your launchd service."
+  #else
+    # echo "No running ssh-agent found.  Check your launchd service."
   fi
 
   # Add all the local keys, getting the passphrase from keychain,
