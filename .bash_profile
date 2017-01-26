@@ -48,34 +48,51 @@ if [ -d ~/.nvm ]; then
   hash brew 2>/dev/null && source $(brew --prefix nvm)/nvm.sh
 fi
 
-# SSH agent stuff might need to be added. See
-# https://coderwall.com/p/qdwcpg/using-the-latest-ssh-from-homebrew-on-osx
-# for more details
-#
-# Use single ssh-agent launched by launchd
-#
-[ -f /usr/local/bin/ssh-ask-keychain ] && \
-  export SSH_ASKPASS=/usr/local/bin/ssh-ask-keychain
-
-if [ -f $HOME/.ssh-agent-pid ] && \
-  kill -0 `cat $HOME/.ssh-agent-pid` 2>/dev/null; then
-  SSH_AUTH_SOCK=`cat $HOME/.ssh-auth-sock`
-  SSH_AGENT_PID=`cat $HOME/.ssh-agent-pid`
-  export SSH_AUTH_SOCK SSH_AGENT_PID
-else
-  # Discover the running ssh-agent started by launchd
-  export SSH_AGENT_PID=$(pgrep -U $USER ssh-agent)
-  if [ -n "$SSH_AGENT_PID" ]; then
-    export SSH_AUTH_SOCK=\
-      $(lsof -U -a -p $SSH_AGENT_PID -F n | grep '^n/' | cut -c2-)
-    echo "$SSH_AUTH_SOCK" > ${HOME}/.ssh-auth-sock
-    echo "$SSH_AGENT_PID" > ${HOME}/.ssh-agent-pid
-  #else
-    # echo "No running ssh-agent found.  Check your launchd service."
+# Check for GPG, and if installed, use it
+# Based on https://gist.github.com/bmhatfield/cc21ec0a3a2df963bffa3c1f884b676b
+if [ hash gpg-agent 2> /dev/null ]; then
+  # We have gpg-agent, great
+  export GPG_TTY=$(tty)
+  if [ -f "${HOME}/.gpg-agent-info" && \
+     [ -n "$(pgrep -U $USER gpg-agent)" ] ]; then
+    . "${HOME}/.gpg-agent-info"
+    export GPG_AGENT_INFO
+    export SSH_AUTH_SOCK
+    export SSH_AGENT_PID
+  else
+    eval $(gpg-agent --daemon --write-env-file ${HOME}/.gpg-agent-info)
   fi
+else
+  # Fallback to SSH
+  #
+  # SSH agent stuff might need to be added. See
+  # https://coderwall.com/p/qdwcpg/using-the-latest-ssh-from-homebrew-on-osx
+  # for more details
+  #
+  # Use single ssh-agent launched by launchd
+  #
+  [ -f /usr/local/bin/ssh-ask-keychain ] && \
+    export SSH_ASKPASS=/usr/local/bin/ssh-ask-keychain
 
-  # Add all the local keys, getting the passphrase from keychain,
-  # helped by the $SSH_ASKPASS script.
-  ssh-add < /dev/null 2>/dev/null
-fi
+  if [ -f $HOME/.ssh-agent-pid ] && \
+    kill -0 `cat $HOME/.ssh-agent-pid` 2>/dev/null; then
+    SSH_AUTH_SOCK=`cat $HOME/.ssh-auth-sock`
+    SSH_AGENT_PID=`cat $HOME/.ssh-agent-pid`
+    export SSH_AUTH_SOCK SSH_AGENT_PID
+  else
+    # Discover the running ssh-agent started by launchd
+    export SSH_AGENT_PID=$(pgrep -U $USER ssh-agent)
+    if [ -n "$SSH_AGENT_PID" ]; then
+      export SSH_AUTH_SOCK=\
+        $(lsof -U -a -p $SSH_AGENT_PID -F n | grep '^n/' | cut -c2-)
+      echo "$SSH_AUTH_SOCK" > ${HOME}/.ssh-auth-sock
+      echo "$SSH_AGENT_PID" > ${HOME}/.ssh-agent-pid
+      #else
+      # echo "No running ssh-agent found.  Check your launchd service."
+    fi
 
+    # Add all the local keys, getting the passphrase from keychain,
+    # helped by the $SSH_ASKPASS script.
+    ssh-add < /dev/null 2>/dev/null
+  fi
+fi # SSH section if gpg-agent not available
