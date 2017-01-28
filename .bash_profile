@@ -1,7 +1,7 @@
 # Load our dotfiles like ~/.bash_prompt, etc…
 #   ~/.extra can be used for settings you don’t want to commit,
 #   Use it to configure your PATH, thus it being first in line.
-for file in ~/.{extra,bash_prompt,exports,aliases,functions}; do
+for file in ~/.{extra,bash_prompt,exports,aliases,functions,secrets}; do
     [ -r "$file" ] && source "$file"
 done
 unset file
@@ -15,21 +15,21 @@ unset file
   PATH=$HOME/bin:$PATH
 
 if hash brew 2>/dev/null; then
-  PATH=$(brew --prefix coreutils)/libexec/gnubin:$PATH
-  export HOMEBREW_GITHUB_API_TOKEN=8b83c2c1ffa4a7972944cd2be460eb85342bb2f4
+  # brew --prefix is slow
+  #PATH=$(brew --prefix coreutils)/libexec/gnubin:$PATH
+  PATH=/usr/local/opt/coreutils/libexec/gnubin:$PATH
 fi
 
 # Set the default text editor.
-if hash subl 2>/dev/null; then
-  export EDITOR='subl -w'
-elif hash vim 2>/dev/null; then
-  export EDITOR='vim'
-fi
-
+export EDITOR='vi'
+hash vim 2>/dev/null && export EDITOR='vim'
+#hash subl 2>/dev/null && export EDITOR='subl -w' # sublime
 
 # Source virtualenvwrapper.sh script
-[ -r /usr/local/bin/virtualenvwrapper.sh ] && \
-  source /usr/local/bin/virtualenvwrapper.sh
+#[ -r /usr/local/bin/virtualenvwrapper.sh ] && \
+#  source /usr/local/bin/virtualenvwrapper.sh
+# This will be handled by .functions
+# See http://blog.n01se.net/agriffis-n01se-net-blog-dynamic-virtualenvwrapper-.html
 
 # Set GOPATH environment variable to the Go lang workspace.
 [ -d $HOME/Workspace/go-workspace ] && \
@@ -44,8 +44,11 @@ hash aws_completer 2>/dev/null && complete -C aws_completer aws
 if [ -d ~/.nvm ]; then
   export NVM_DIR=~/.nvm
 
-  # TODO: Determine what this means in linux
-  hash brew 2>/dev/null && source $(brew --prefix nvm)/nvm.sh
+  # See https://github.com/creationix/nvm/issues/539#issuecomment-245791291
+  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh" --no-use # This loads nvm
+
+  alias node='unalias node ; unalias npm ; nvm use default ; node $@'
+  alias npm='unalias node ; unalias npm ; nvm use default ; npm $@'
 fi
 
 # Check for GPG, and if installed, use it
