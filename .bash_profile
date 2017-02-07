@@ -7,11 +7,11 @@ done
 unset file
 
 [[ $- = *i* ]] && \
-  [ [ -r ~/.liquidprompt/liquidprompt ] && \
-    source ~/.liquidprompt/liquidprompt ] || \
-  [ [ -r ~/liquidprompt/liquidprompt ] && \
-    source ~/liquidprompt/liquidprompt ] ||
-  [ [ -r ~/.bash_prompt ] && source ~/.bash_prompt ]
+  { [ -r ~/.liquidprompt/liquidprompt ] && \
+    source ~/.liquidprompt/liquidprompt; } || \
+  { [ -r ~/liquidprompt/liquidprompt ] && \
+    source ~/liquidprompt/liquidprompt;} ||
+  [ -r ~/.bash_prompt ] && source ~/.bash_prompt
 
 # Add ~/bin:/usr/local/sbin:/usr/local/bin to path if they're not there
 ! echo $PATH |fgrep /usr/local/bin >/dev/null && \
