@@ -1,10 +1,17 @@
 # Load our dotfiles like ~/.bash_prompt, etc…
 #   ~/.extra can be used for settings you don’t want to commit,
 #   Use it to configure your PATH, thus it being first in line.
-for file in ~/.{extra,bash_prompt,exports,aliases,functions,secrets}; do
+for file in ~/.{extra,exports,aliases,functions,secrets}; do
     [ -r "$file" ] && source "$file"
 done
 unset file
+
+[[ $- = *i* ]] && \
+  [ [ -r ~/.liquidprompt/liquidprompt ] && \
+    source ~/.liquidprompt/liquidprompt ] || \
+  [ [ -r ~/liquidprompt/liquidprompt ] && \
+    source ~/liquidprompt/liquidprompt ] ||
+  [ [ -r ~/.bash_prompt ] && source ~/.bash_prompt ]
 
 # Add ~/bin:/usr/local/sbin:/usr/local/bin to path if they're not there
 ! echo $PATH |fgrep /usr/local/bin >/dev/null && \
